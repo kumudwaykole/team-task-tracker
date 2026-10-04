@@ -22,7 +22,7 @@
 | Database pagination and debounced search           | repository skip/take/count; web hooks                            | workItems tests; useDebounce/useListParams                                                                       |
 | README, design and runnable API examples           | README.md; DESIGN.md; docs/API.md; docs/postman                  | Setup commands and Postman Demo Flow                                                                             |
 | Guarded auth/RBAC tests and CI                     | tests; vitest.config.ts; .github/workflows/ci.yml                | pnpm test, typecheck, lint, build                                                                                |
-| One-command local and Docker run                   | scripts/bootstrap.mjs; root scripts; Dockerfile; compose         | `pnpm bootstrap`, `pnpm dev`; `docker compose --profile app up --build`; docker compose --profile app up --build |
+| One-command local and Docker run                   | scripts/postinstall.mjs; root scripts; Dockerfile; compose         | `pnpm install`, `pnpm dev`; `docker compose --profile app up --build`; docker compose --profile app up --build |
 | Non-root image, readiness, migration ordering      | runtime USER node; healthcheck; compose depends_on               | CI `docker` job (non-root, no dev tools); HOSTING.md release checks                                              |
 
 Server implementation paths are relative to `apps/server/src/`; test paths are relative to `apps/server/`. Hosting guidance is in [HOSTING.md](HOSTING.md). Frontend end-to-end automation is optional in the guide; backend permission enforcement is covered by the API tests.

@@ -4,9 +4,8 @@
   "private": true,
   "description": "Unified Team Task & Support Ticket Tracker",
   "scripts": {
-    "setup": "pnpm bootstrap",
-    "bootstrap": "pnpm install && node scripts/bootstrap.mjs",
-    "dev": "docker compose up -d --wait db && pnpm --filter server dev",
+    "postinstall": "node scripts/postinstall.mjs",
+    "dev": "docker compose up -d --wait db && pnpm --filter server db:prepare && pnpm --filter server dev",
     "build": "pnpm --filter web build && pnpm --filter server build",
     "start": "pnpm --filter server start",
     "test": "pnpm --filter server test",

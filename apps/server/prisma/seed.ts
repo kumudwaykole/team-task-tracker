@@ -90,6 +90,12 @@ async function main() {
     throw new Error('Refusing to seed: NODE_ENV is production');
   }
 
+  // `pnpm dev` passes --if-empty: seed a brand-new database only, never re-add deleted demo data.
+  if (process.argv.includes('--if-empty') && (await prisma.user.count()) > 0) {
+    console.log('Database already has data; skipping the demo seed.');
+    return;
+  }
+
   // Users
   const passwordHash = await hashPassword(DEV_PASSWORD);
   const idByKey = new Map<string, string>();

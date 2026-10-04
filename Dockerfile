@@ -9,6 +9,8 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.cjs ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+# Root postinstall hook; it does nothing here, since the source is not copied yet.
+COPY scripts/postinstall.mjs scripts/
 
 # ---------- deps: every dependency (cached until a manifest or the lockfile changes) ----------
 FROM base AS deps

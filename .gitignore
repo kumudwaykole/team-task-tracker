@@ -5,7 +5,7 @@ coverage
 *.log
 
 # Private build guide; everything else in docs/ is committed
-docs/llm.md
+docs/*.md
 
 # Local verification artifacts
 .tmp/
