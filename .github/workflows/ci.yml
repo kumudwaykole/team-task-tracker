@@ -1,0 +1,55 @@
+name: CI
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tracker_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tracker_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.6'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter server db:generate
+      - run: pnpm typecheck
+      - run: pnpm lint
+      # Test settings only here, so the build below is a normal production build.
+      - run: pnpm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracker_test?schema=public
+          JWT_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+          BCRYPT_ROUNDS: '4'
+          RUN_JOBS: 'false'
+      - run: pnpm build
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target runtime -t tracker:ci .
+      - name: Check runtime user and dependencies
+        run: >-
+          docker run --rm tracker:ci node -e
+          "const fs=require('node:fs');
+          if(process.getuid()===0) throw new Error('Runtime must not be root');
+          const packages=fs.readdirSync('/app/node_modules/.pnpm');
+          if(packages.some(p=>/^(prisma|typescript|tsx|vite|vitest|eslint)@/.test(p)))
+          throw new Error('Development tools found in runtime');"

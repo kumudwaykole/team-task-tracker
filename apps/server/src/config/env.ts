@@ -25,7 +25,11 @@ const schema = z
       .string()
       .regex(/^\d+[smhd]$/, 'JWT_EXPIRES_IN must look like 15m, 12h or 1d')
       .default('1d'),
-    BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
+    // 4 keeps the test suite fast; production requires 10 or more (checked below).
+    BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(14).default(12),
+    // Proxy hops in front of the app (e.g. 1 behind Caddy). 0 trusts none, so clients cannot
+    // spoof X-Forwarded-For to dodge the rate limiter when no proxy is there.
+    TRUST_PROXY: z.coerce.number().int().min(0).max(10).default(0),
 
     // Background jobs. Set RUN_JOBS=false for tests or extra instances.
     RUN_JOBS: z.stringbool().default(true),
@@ -43,7 +47,11 @@ const schema = z
   .refine(
     (env) => env.NODE_ENV !== 'production' || !env.JWT_SECRET.startsWith(PLACEHOLDER_SECRET_PREFIX),
     { path: ['JWT_SECRET'], message: 'JWT_SECRET still has the placeholder value' },
-  );
+  )
+  .refine((env) => env.NODE_ENV !== 'production' || env.BCRYPT_ROUNDS >= 10, {
+    path: ['BCRYPT_ROUNDS'],
+    message: 'BCRYPT_ROUNDS must be at least 10 in production',
+  });
 
 const parsed = schema.safeParse(process.env);
 

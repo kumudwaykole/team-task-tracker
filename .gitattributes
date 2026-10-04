@@ -1,0 +1,5 @@
+# LF everywhere, so shell scripts and config files work inside Linux containers.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gif binary

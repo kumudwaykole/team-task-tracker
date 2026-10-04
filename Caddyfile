@@ -1,0 +1,6 @@
+# Used by the `caddy` service (docker compose --profile app --profile prod up -d).
+# Set DOMAIN in .env; Caddy gets and renews the TLS certificate and proxies WebSockets as-is.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

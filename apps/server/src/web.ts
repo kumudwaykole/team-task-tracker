@@ -42,6 +42,8 @@ export async function mountWeb(app: Express, httpServer: Server): Promise<() => 
   // Imported only in development; vite is a dev dependency.
   const { createServer } = await import('vite');
   const vite = await createServer({
+    // Avoid temporary bundled config files triggering tsx watch restarts.
+    configLoader: 'runner',
     root: path.resolve(SERVER_ROOT, env.WEB_DIR),
     appType: 'spa',
     server: { middlewareMode: true, hmr: { server: httpServer } },

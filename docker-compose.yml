@@ -1,21 +1,90 @@
+# Development: `pnpm dev` starts only `db` (no profile).
+# Full stack:  `docker compose --profile app up --build` adds the one-off `migrate` job and `app`.
+# HTTPS:       add `--profile prod` for Caddy in front of the app (see README, Hosting).
+# Settings come from .env in this folder (copy .env.example).
+
+x-database-url: &database-url postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-tracker}?schema=public
+
 services:
   db:
     image: postgres:16
     container_name: tracker-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tracker
-    # Host port 5434 avoids clashing with a locally installed Postgres on 5432.
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-tracker}
+    # Reachable from this machine only. Host port 5434 avoids clashing with a locally installed Postgres.
     ports:
-      - '5434:5432'
+      - '127.0.0.1:${DB_PORT:-5434}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d tracker']
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Applies migrations (and optionally the demo seed), then exits. `app` starts only if it succeeds.
+  migrate:
+    profiles: ['app']
+    build: { context: ., target: tools }
+    image: tracker-tools
+    environment:
+      DATABASE_URL: *database-url
+      JWT_SECRET: ${JWT_SECRET:-}
+      SEED: ${SEED:-false}
+      NODE_ENV: development # the seed refuses to run in production
+    command:
+      - sh
+      - -c
+      - |
+        case "$$JWT_SECRET" in
+          '' | replace-with*) echo 'Set JWT_SECRET in .env first (cp .env.example .env, then generate one).'; exit 1 ;;
+        esac
+        pnpm --filter server db:deploy || exit $$?
+        if [ "$$SEED" = true ]; then pnpm --filter server db:seed; fi
+    depends_on:
+      db: { condition: service_healthy }
+    restart: 'no'
+
+  app:
+    profiles: ['app']
+    build: { context: ., target: runtime }
+    image: tracker-app
+    container_name: tracker-app
+    restart: unless-stopped
+    init: true # forwards SIGTERM so the server shuts down gracefully
+    stop_grace_period: 20s
+    ports:
+      # Set APP_PORT=127.0.0.1:3000 behind a proxy so only the proxy can reach the app.
+      - '${APP_PORT:-3000}:3000'
+    environment:
+      DATABASE_URL: *database-url
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      RUN_JOBS: 'true'
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+
+  # HTTPS reverse proxy for a server with a domain. Certificates are issued and renewed automatically.
+  caddy:
+    profiles: ['prod']
+    image: caddy:2
+    restart: unless-stopped
+    ports: ['80:80', '443:443', '443:443/udp']
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

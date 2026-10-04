@@ -1,0 +1,23 @@
+# Keep the build context small and free of secrets.
+**/node_modules
+**/dist
+**/coverage
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+.vscode
+docs
+*.md
+!README.md
+Dockerfile
+.dockerignore
+docker-compose*.yml
+Caddyfile
+# Generated in the image by `prisma generate`
+apps/server/src/generated
+# Tests do not ship
+apps/server/tests
+.tmp

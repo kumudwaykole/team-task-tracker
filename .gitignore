@@ -4,4 +4,8 @@ coverage
 .env
 *.log
 
-docs
+# Private build guide; everything else in docs/ is committed
+docs/llm.md
+
+# Local verification artifacts
+.tmp/
