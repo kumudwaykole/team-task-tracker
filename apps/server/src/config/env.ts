@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import cron from 'node-cron';
 import { z } from 'zod';
 
 const PLACEHOLDER_SECRET_PREFIX = 'replace-with';
@@ -25,6 +26,19 @@ const schema = z
       .regex(/^\d+[smhd]$/, 'JWT_EXPIRES_IN must look like 15m, 12h or 1d')
       .default('1d'),
     BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
+
+    // Background jobs. Set RUN_JOBS=false for tests or extra instances.
+    RUN_JOBS: z.stringbool().default(true),
+    DUE_SOON_CRON: z
+      .string()
+      .refine((value) => cron.validate(value), 'Invalid cron expression')
+      .default('*/15 * * * *'),
+    DUE_SOON_WINDOW_HOURS: z.coerce.number().int().min(1).max(168).default(24),
+    NOTIFICATION_RETENTION_DAYS: z.coerce.number().int().min(1).default(90),
+
+    // React app, relative to apps/server. Dev serves WEB_DIR through Vite, production serves WEB_DIST_DIR.
+    WEB_DIR: z.string().min(1).default('../web'),
+    WEB_DIST_DIR: z.string().min(1).default('../web/dist'),
   })
   .refine(
     (env) => env.NODE_ENV !== 'production' || !env.JWT_SECRET.startsWith(PLACEHOLDER_SECRET_PREFIX),

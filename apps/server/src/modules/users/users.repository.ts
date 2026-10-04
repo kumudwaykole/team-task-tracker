@@ -44,3 +44,6 @@ export const create = (data: { name: string; email: string; passwordHash: string
 
 export const updateRole = (id: string, role: Role) =>
   prisma.user.update({ where: { id }, data: { role }, select: userSelect });
+
+export const findIdsByRole = async (role: Role) =>
+  (await prisma.user.findMany({ where: { role }, select: { id: true } })).map((user) => user.id);

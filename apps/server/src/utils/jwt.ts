@@ -14,18 +14,22 @@ export function signToken(user: { id: string; role: Role }): string {
 }
 
 /**
- * Verifies the signature and expiry and returns the user id.
+ * Verifies the signature and expiry and returns the user id and expiry time (ms).
  * The role inside the token is deliberately ignored: callers reload the user
  * from the database, so role changes and deletions apply immediately.
  */
-export function verifyToken(token: string): { userId: string } {
+export function verifyToken(token: string): { userId: string; expiresAt: number } {
   try {
     // Pinning the algorithm blocks "alg: none" and algorithm-swap attacks.
     const payload = jwt.verify(token, env.JWT_SECRET, { algorithms: [ALGORITHM] });
-    if (typeof payload === 'string' || typeof payload.sub !== 'string') {
+    if (
+      typeof payload === 'string' ||
+      typeof payload.sub !== 'string' ||
+      typeof payload.exp !== 'number'
+    ) {
       throw unauthorized('Invalid token', 'INVALID_TOKEN');
     }
-    return { userId: payload.sub };
+    return { userId: payload.sub, expiresAt: payload.exp * 1000 };
   } catch (err) {
     if (err instanceof AppError) throw err;
     if (err instanceof jwt.TokenExpiredError)

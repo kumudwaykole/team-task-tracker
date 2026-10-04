@@ -95,6 +95,7 @@ model ProjectMember {
 
 model WorkItem {
   id          String       @id @default(uuid(7)) @db.Uuid
+  number      Int          @unique @default(autoincrement()) // human-friendly key: TASK-12, TKT-12
   type        WorkItemType
   title       String       @db.VarChar(200)
   description String

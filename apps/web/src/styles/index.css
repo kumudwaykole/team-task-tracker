@@ -1,0 +1,83 @@
+@import 'tailwindcss';
+
+/*
+ * Every colour in the app is defined here, once. Components use only these tokens
+ * (bg-surface, text-fg-strong, border-border, ...), never raw hex or Tailwind's default palette.
+ * Changing the look (or adding a light theme) means editing this file only.
+ */
+@theme {
+  /* Disable Tailwind's default palette so only the tokens below exist. */
+  --color-*: initial;
+
+  /* Surfaces */
+  --color-sunken: #161a1d; /* behind everything, input wells */
+  --color-canvas: #1d2125; /* page background */
+  --color-surface: #22272b; /* cards, panels, table rows */
+  --color-raised: #282e33; /* dropdowns, modals */
+  --color-hover: #2c333a; /* hover on surfaces */
+  --color-active: #38414a; /* pressed */
+  --color-selected: #1c2b41; /* selected nav item / row */
+  --color-backdrop: #0304049c; /* behind modals */
+
+  /* Borders */
+  --color-border: #38414a;
+  --color-border-strong: #4b545c;
+
+  /* Text */
+  --color-fg: #b6c2cf; /* default text */
+  --color-fg-strong: #dee4ea; /* headings, important text */
+  --color-fg-subtle: #8c9bab; /* secondary text, labels */
+  --color-fg-disabled: #596773;
+
+  /* Primary (Jira blue): main actions, links, focus */
+  --color-primary: #579dff;
+  --color-primary-hover: #85b8ff;
+  --color-primary-active: #cce0ff;
+  --color-on-primary: #1d2125; /* text on a primary or semantic background */
+
+  /* Secondary (neutral): secondary buttons, tags, subtle controls */
+  --color-secondary: #a1bdd914;
+  --color-secondary-hover: #a6c5e229;
+  --color-secondary-active: #a6c5e233;
+
+  /* Semantic */
+  --color-success: #4bce97;
+  --color-warning: #f5cd47;
+  --color-danger: #f87168;
+  --color-orange: #fea362;
+  --color-purple: #9f8fef;
+  --color-teal: #60c6d2;
+
+  /* Shape and type */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue',
+    sans-serif;
+  --shadow-overlay: 0 8px 12px #0304044d, 0 0 1px #03040480;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    font-size: 14px;
+  }
+  body {
+    @apply bg-canvas text-fg font-sans antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+  ::selection {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  * {
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+  dialog::backdrop {
+    background: var(--color-backdrop);
+  }
+}

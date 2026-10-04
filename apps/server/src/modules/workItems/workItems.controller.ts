@@ -4,6 +4,7 @@ import { getValidated } from '../../middleware/validate.js';
 import { sendNoContent, sendSuccess } from '../../utils/response.js';
 import type { IdParams } from '../../utils/schemas.js';
 import type {
+  BoardQuery,
   CreateWorkItemInput,
   ListWorkItemsQuery,
   UpdateWorkItemInput,
@@ -41,4 +42,15 @@ export async function remove(req: Request, res: Response) {
   const { id } = getValidated<IdParams>(req, 'params');
   await workItemsService.remove(id);
   sendNoContent(res);
+}
+
+/** GET /projects/:id/board */
+export async function board(req: Request, res: Response) {
+  const { id } = getValidated<IdParams>(req, 'params');
+  const result = await workItemsService.board(
+    getAuthUser(req),
+    id,
+    getValidated<BoardQuery>(req, 'query'),
+  );
+  sendSuccess(res, result);
 }

@@ -21,7 +21,7 @@ export const paginationSchema = z.object({
 });
 
 type PageQuery = Pick<z.infer<typeof paginationSchema>, 'page' | 'limit'>;
-type SortOrder = z.infer<typeof paginationSchema>['order'];
+export type SortOrder = z.infer<typeof paginationSchema>['order'];
 
 export const toSkipTake = ({ page, limit }: PageQuery) => ({
   skip: (page - 1) * limit,

@@ -4,6 +4,7 @@ import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { validate } from '../../middleware/validate.js';
 import { idParams } from '../../utils/schemas.js';
+import { commentsRouter } from '../comments/comments.routes.js';
 import * as workItemsController from './workItems.controller.js';
 import {
   createWorkItemSchema,
@@ -31,3 +32,4 @@ workItemsRouter.delete(
   validate({ params: idParams }),
   workItemsController.remove,
 );
+workItemsRouter.use('/:id/comments', commentsRouter);

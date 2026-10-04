@@ -71,3 +71,11 @@ export const listWorkItemsQuery = paginationSchema
 export type CreateWorkItemInput = z.infer<typeof createWorkItemSchema>;
 export type UpdateWorkItemInput = z.infer<typeof updateWorkItemSchema>;
 export type ListWorkItemsQuery = z.infer<typeof listWorkItemsQuery>;
+
+export const boardQuery = paginationSchema.pick({ q: true }).extend({
+  type: z.enum(WorkItemType).default(WorkItemType.TASK),
+  assigneeId: z.uuid().optional(),
+  perColumn: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export type BoardQuery = z.infer<typeof boardQuery>;

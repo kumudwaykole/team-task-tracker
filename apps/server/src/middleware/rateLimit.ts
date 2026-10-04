@@ -1,5 +1,6 @@
 import { rateLimit, type Options } from 'express-rate-limit';
 import { isTest } from '../config/env.js';
+import { getAuthUser } from './authenticate.js';
 import { AppError } from '../utils/AppError.js';
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
@@ -22,3 +23,11 @@ export const globalLimiter = rateLimit({ ...baseOptions, limit: 1000 });
 
 /** Strict limit for login and register: 10 requests per 15 minutes per IP. */
 export const authLimiter = rateLimit({ ...baseOptions, limit: 10 });
+
+/** 30 comments per minute per user (runs after `authenticate`). */
+export const commentLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: 60 * 1000,
+  limit: 30,
+  keyGenerator: (req) => getAuthUser(req).id,
+});

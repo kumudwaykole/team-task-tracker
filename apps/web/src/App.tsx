@@ -1,122 +1,112 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { lazy, Suspense, type CSSProperties } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { isApiError } from './api/client';
+import { AppShell } from './components/layout/AppShell';
+import { ProjectLayout } from './components/layout/ProjectLayout';
+import { ProtectedRoute, PublicOnlyRoute } from './components/layout/routeGuards';
+import { ErrorState } from './components/ui/ErrorState';
+import { FullPageSpinner } from './components/ui/feedback';
+import { AuthProvider } from './context/AuthProvider';
+import { SocketProvider } from './context/SocketProvider';
 
-function App() {
-  const [count, setCount] = useState(0)
+// Each page is its own chunk, loaded when first visited.
+const AdminUsersPage = lazy(() =>
+  import('./pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })),
+);
+const DashboardPage = lazy(() =>
+  import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const NotificationsPage = lazy(() =>
+  import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
+);
+const ProjectBoardPage = lazy(() =>
+  import('./pages/ProjectBoardPage').then((m) => ({ default: m.ProjectBoardPage })),
+);
+const ProjectListPage = lazy(() =>
+  import('./pages/ProjectListPage').then((m) => ({ default: m.ProjectListPage })),
+);
+const ProjectMembersPage = lazy(() =>
+  import('./pages/ProjectMembersPage').then((m) => ({ default: m.ProjectMembersPage })),
+);
+const ProjectsPage = lazy(() =>
+  import('./pages/ProjectsPage').then((m) => ({ default: m.ProjectsPage })),
+);
+const RegisterPage = lazy(() =>
+  import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })),
+);
+const WorkItemDetailPage = lazy(() =>
+  import('./pages/WorkItemDetailPage').then((m) => ({ default: m.WorkItemDetailPage })),
+);
+const WorkItemsPage = lazy(() =>
+  import('./pages/WorkItemsPage').then((m) => ({ default: m.WorkItemsPage })),
+);
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      // Retry only network failures and 5xx; a 4xx will not change by retrying.
+      retry: (count, error) =>
+        count < 2 && (!isApiError(error) || error.status === 0 || error.status >= 500),
+      refetchOnWindowFocus: true,
+    },
+  },
+});
+
+// Toasts use the same colour tokens as the rest of the app.
+const toasterStyle = {
+  '--normal-bg': 'var(--color-raised)',
+  '--normal-border': 'var(--color-border)',
+  '--normal-text': 'var(--color-fg-strong)',
+} as CSSProperties;
+
+export function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SocketProvider>
+            <Suspense fallback={<FullPageSpinner />}>
+              <Routes>
+                <Route element={<PublicOnlyRoute />}>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                </Route>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<AppShell />}>
+                    <Route index element={<DashboardPage />} />
+                    <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="projects/:projectId" element={<ProjectLayout />}>
+                      <Route index element={<Navigate to="board" replace />} />
+                      <Route path="board" element={<ProjectBoardPage />} />
+                      <Route path="list" element={<ProjectListPage />} />
+                      <Route path="members" element={<ProjectMembersPage />} />
+                    </Route>
+                    <Route path="work-items" element={<WorkItemsPage />} />
+                    <Route path="work-items/:id" element={<WorkItemDetailPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
+                    <Route
+                      path="admin/users"
+                      element={
+                        <ProtectedRoute roles={['ADMIN']}>
+                          <AdminUsersPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="403" element={<ErrorState kind="forbidden" />} />
+                    <Route path="*" element={<ErrorState kind="not-found" />} />
+                  </Route>
+                </Route>
+              </Routes>
+            </Suspense>
+            <Toaster theme="dark" position="bottom-right" style={toasterStyle} closeButton />
+          </SocketProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
 }
-
-export default App

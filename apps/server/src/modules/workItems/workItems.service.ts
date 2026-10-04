@@ -1,3 +1,4 @@
+import { runInTransaction } from '../../config/prisma.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import { Role, WorkItemType } from '../../generated/prisma/enums.js';
 import type { AuthUser } from '../../types/auth.js';
@@ -9,24 +10,39 @@ import {
   notFound,
 } from '../../utils/AppError.js';
 import { buildMeta, sortWithTieBreaker, toSkipTake } from '../../utils/pagination.js';
+import { publishNotifications } from '../notifications/notifications.publisher.js';
+import * as recipients from '../notifications/notifications.recipients.js';
+import * as notificationsRepository from '../notifications/notifications.repository.js';
 import { canManageProject } from '../projects/projects.policy.js';
 import * as projectsRepository from '../projects/projects.repository.js';
 import { getAccessibleProject } from '../projects/projects.service.js';
 import * as usersRepository from '../users/users.repository.js';
-import { publishWorkItemEvents, type WorkItemEvent } from './workItems.events.js';
 import { capabilityFor, managesItem, permissionsFor, workItemScope } from './workItems.policy.js';
 import * as workItemsRepository from './workItems.repository.js';
 import type {
+  BoardQuery,
   CreateWorkItemInput,
   ListWorkItemsQuery,
   UpdateWorkItemInput,
 } from './workItems.schema.js';
-import { assertTransition, FINAL_STATUSES, INITIAL_STATUS } from './workItems.transitions.js';
+import {
+  assertTransition,
+  FINAL_STATUSES,
+  INITIAL_STATUS,
+  statusesFor,
+} from './workItems.transitions.js';
 
 type ProjectRef = { id: string; managerId: string } | null;
 
 const scoped = (user: AuthUser, id: string): Prisma.WorkItemWhereInput => ({
   AND: [{ id }, workItemScope(user)],
+});
+
+const searchFilter = (q: string): Prisma.WorkItemWhereInput => ({
+  OR: [
+    { title: { contains: q, mode: 'insensitive' } },
+    { description: { contains: q, mode: 'insensitive' } },
+  ],
 });
 
 /** Adds the permission hints and drops `project.managerId`, which is only needed to compute them. */
@@ -43,6 +59,13 @@ function present<T extends workItemsRepository.WorkItemRow>(user: AuthUser, row:
     project: row.project && { id: row.project.id, name: row.project.name },
     ...hints,
   };
+}
+
+/** A work item the user can see, with the fields needed for checks. 404 otherwise. */
+export async function getAccessibleItem(user: AuthUser, id: string) {
+  const item = await workItemsRepository.findForAccess(scoped(user, id));
+  if (!item) throw notFound('Work item not found');
+  return item;
 }
 
 /**
@@ -92,24 +115,42 @@ export async function create(user: AuthUser, input: CreateWorkItemInput) {
     await assertAssignable(user, { type: input.type, project }, input.assigneeId);
   }
 
-  const row = await workItemsRepository.create({
-    type: input.type,
-    title: input.title,
-    description: input.description,
-    priority: input.priority,
-    status: INITIAL_STATUS[input.type],
-    projectId: project?.id ?? null,
-    requesterId: user.id,
-    assigneeId: input.assigneeId ?? null,
-    dueDate: input.dueDate ?? null,
-  });
+  // A ticket without a project is announced to every Admin.
+  const adminIds = !isTask && !project ? await usersRepository.findIdsByRole(Role.ADMIN) : [];
 
-  const events: WorkItemEvent[] = [];
-  if (row.assignee) {
-    events.push({ type: 'ASSIGNED', workItemId: row.id, assigneeId: row.assignee.id });
-  }
-  if (row.type === WorkItemType.TICKET) events.push({ type: 'TICKET_CREATED', workItemId: row.id });
-  publishWorkItemEvents(user, events);
+  // The item and its notifications commit together; they are pushed only after the commit.
+  const { row, notifications } = await runInTransaction(async (tx) => {
+    const row = await workItemsRepository.create(
+      {
+        type: input.type,
+        title: input.title,
+        description: input.description,
+        priority: input.priority,
+        status: INITIAL_STATUS[input.type],
+        projectId: project?.id ?? null,
+        requesterId: user.id,
+        assigneeId: input.assigneeId ?? null,
+        dueDate: input.dueDate ?? null,
+      },
+      tx,
+    );
+    const target: recipients.NotifiableItem = {
+      id: row.id,
+      title: row.title,
+      requesterId: user.id,
+      assigneeId: row.assignee?.id ?? null,
+      project: row.project,
+    };
+    const notifications = await notificationsRepository.createMany(
+      [
+        ...recipients.assigned(target, user),
+        ...(isTask ? [] : recipients.ticketCreated(target, user, adminIds)),
+      ],
+      tx,
+    );
+    return { row, notifications };
+  });
+  publishNotifications(notifications);
 
   return present(user, row);
 }
@@ -136,14 +177,7 @@ export async function list(user: AuthUser, query: ListWorkItemsQuery) {
       },
     });
   }
-  if (query.q) {
-    filters.push({
-      OR: [
-        { title: { contains: query.q, mode: 'insensitive' } },
-        { description: { contains: query.q, mode: 'insensitive' } },
-      ],
-    });
-  }
+  if (query.q) filters.push(searchFilter(query.q));
 
   // Priority sorts by enum declaration order (LOW < ... < URGENT). Items without a due date go last.
   const orderBy: Prisma.WorkItemOrderByWithRelationInput[] =
@@ -160,6 +194,29 @@ export async function list(user: AuthUser, query: ListWorkItemsQuery) {
   return { data: rows.map((row) => present(user, row)), meta: buildMeta(query, total) };
 }
 
+/** Every column of a project board in one request. */
+export async function board(user: AuthUser, projectId: string, query: BoardQuery) {
+  const project = await getAccessibleProject(user, projectId);
+  const where: Prisma.WorkItemWhereInput = {
+    AND: [
+      workItemScope(user),
+      { projectId: project.id, type: query.type },
+      ...(query.assigneeId ? [{ assigneeId: query.assigneeId }] : []),
+      ...(query.q ? [searchFilter(query.q)] : []),
+    ],
+  };
+  const statuses = statusesFor(query.type);
+  const { columns, totals } = await workItemsRepository.findBoard(where, statuses, query.perColumn);
+  return {
+    type: query.type,
+    columns: statuses.map((status, index) => ({
+      status,
+      total: totals.get(status) ?? 0,
+      items: (columns[index] ?? []).map((row) => present(user, row)),
+    })),
+  };
+}
+
 export async function getById(user: AuthUser, id: string) {
   const row = await workItemsRepository.findDetail(scoped(user, id));
   if (!row) throw notFound('Work item not found');
@@ -167,8 +224,7 @@ export async function getById(user: AuthUser, id: string) {
 }
 
 export async function update(user: AuthUser, id: string, input: UpdateWorkItemInput) {
-  const item = await workItemsRepository.findForUpdate(scoped(user, id));
-  if (!item) throw notFound('Work item not found');
+  const item = await getAccessibleItem(user, id);
 
   const capability = capabilityFor(user, item);
   if (capability === 'NONE') throw forbidden('You cannot modify this work item');
@@ -178,32 +234,22 @@ export async function update(user: AuthUser, id: string, input: UpdateWorkItemIn
   }
 
   const data: Prisma.WorkItemUncheckedUpdateManyInput = {};
-  const events: WorkItemEvent[] = [];
-
   if (input.title !== undefined) data.title = input.title;
   if (input.description !== undefined) data.description = input.description;
   if (input.priority !== undefined) data.priority = input.priority;
 
   // Sending the current status is a no-op.
-  const statusChanging = input.status !== undefined && input.status !== item.status;
-  if (input.status !== undefined && statusChanging) {
-    assertTransition(item.type, item.status, input.status, user.role);
-    data.status = input.status;
-    events.push({
-      type: 'STATUS_CHANGED',
-      workItemId: item.id,
-      from: item.status,
-      to: input.status,
-    });
+  const newStatus = input.status !== item.status ? input.status : undefined;
+  if (newStatus) {
+    assertTransition(item.type, item.status, newStatus, user.role);
+    data.status = newStatus;
   }
 
-  if (input.assigneeId !== undefined && input.assigneeId !== item.assigneeId) {
-    if (input.assigneeId !== null) {
-      await assertAssignable(user, item, input.assigneeId);
-      events.push({ type: 'ASSIGNED', workItemId: item.id, assigneeId: input.assigneeId });
-    }
-    data.assigneeId = input.assigneeId;
+  const assigneeChanged = input.assigneeId !== undefined && input.assigneeId !== item.assigneeId;
+  if (assigneeChanged && input.assigneeId) {
+    await assertAssignable(user, item, input.assigneeId);
   }
+  if (assigneeChanged) data.assigneeId = input.assigneeId ?? null;
 
   if (input.dueDate !== undefined && input.dueDate?.getTime() !== item.dueDate?.getTime()) {
     if (input.dueDate && input.dueDate <= new Date()) {
@@ -218,19 +264,37 @@ export async function update(user: AuthUser, id: string, input: UpdateWorkItemIn
   }
 
   if (Object.keys(data).length > 0) {
-    // If the status changes, only update while it is still the one we validated against.
-    const updated = await workItemsRepository.updateGuarded(
-      { id: item.id, ...(statusChanging && { status: item.status }) },
-      data,
-    );
-    if (updated === 0) {
-      throw new AppError(
-        409,
-        'STALE_STATE',
-        'This item was changed by someone else. Reload and try again.',
+    const target: recipients.NotifiableItem = {
+      id: item.id,
+      title: input.title ?? item.title,
+      requesterId: item.requesterId,
+      assigneeId: assigneeChanged ? (input.assigneeId ?? null) : item.assigneeId,
+      project: item.project,
+    };
+
+    const notifications = await runInTransaction(async (tx) => {
+      // If the status changes, only update while it is still the one we validated against.
+      const updated = await workItemsRepository.updateGuarded(
+        { id: item.id, ...(newStatus && { status: item.status }) },
+        data,
+        tx,
       );
-    }
-    publishWorkItemEvents(user, events);
+      if (updated === 0) {
+        throw new AppError(
+          409,
+          'STALE_STATE',
+          'This item was changed by someone else. Reload and try again.',
+        );
+      }
+      return notificationsRepository.createMany(
+        [
+          ...(assigneeChanged ? recipients.assigned(target, user) : []),
+          ...(newStatus ? recipients.statusChanged(target, user, item.status, newStatus) : []),
+        ],
+        tx,
+      );
+    });
+    publishNotifications(notifications);
   }
 
   return getById(user, id);

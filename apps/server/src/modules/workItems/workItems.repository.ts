@@ -1,5 +1,6 @@
-import { prisma } from '../../config/prisma.js';
-import type { Prisma } from '../../generated/prisma/client.js';
+import { prisma, type Db } from '../../config/prisma.js';
+import { Prisma } from '../../generated/prisma/client.js';
+import type { Status } from '../../generated/prisma/enums.js';
 import { FINAL_STATUSES } from './workItems.transitions.js';
 
 /**
@@ -8,6 +9,7 @@ import { FINAL_STATUSES } from './workItems.transitions.js';
  */
 const listSelect = {
   id: true,
+  number: true,
   type: true,
   title: true,
   status: true,
@@ -26,10 +28,11 @@ const detailSelect = {
   _count: { select: { comments: true } },
 } satisfies Prisma.WorkItemSelect;
 
-/** Fields the update flow needs for its checks. */
+/** Fields needed for access checks and notification recipients. */
 const accessSelect = {
   id: true,
   type: true,
+  title: true,
   status: true,
   requesterId: true,
   assigneeId: true,
@@ -53,11 +56,36 @@ export const findManyAndCount = (args: {
 export const findDetail = (where: Prisma.WorkItemWhereInput) =>
   prisma.workItem.findFirst({ where, select: detailSelect });
 
-export const findForUpdate = (where: Prisma.WorkItemWhereInput) =>
+export const findForAccess = (where: Prisma.WorkItemWhereInput) =>
   prisma.workItem.findFirst({ where, select: accessSelect });
 
-export const create = (data: Prisma.WorkItemUncheckedCreateInput) =>
-  prisma.workItem.create({ data, select: detailSelect });
+/**
+ * Board columns: the first `perColumn` cards of each status, plus each status's total.
+ * The card order matches the list's `sortBy=priority&order=desc`, so "load more" can page through it.
+ */
+export async function findBoard(
+  where: Prisma.WorkItemWhereInput,
+  statuses: Status[],
+  perColumn: number,
+) {
+  const [columns, totals] = await Promise.all([
+    prisma.$transaction(
+      statuses.map((status) =>
+        prisma.workItem.findMany({
+          where: { AND: [where, { status }] },
+          orderBy: [{ priority: 'desc' }, { id: 'desc' }],
+          take: perColumn,
+          select: listSelect,
+        }),
+      ),
+    ),
+    prisma.workItem.groupBy({ by: ['status'], where, _count: { _all: true } }),
+  ]);
+  return { columns, totals: new Map(totals.map((group) => [group.status, group._count._all])) };
+}
+
+export const create = (data: Prisma.WorkItemUncheckedCreateInput, db: Db = prisma) =>
+  db.workItem.create({ data, select: detailSelect });
 
 /**
  * Optimistic update: `where` can pin the current status so a concurrent change makes it match nothing.
@@ -66,7 +94,8 @@ export const create = (data: Prisma.WorkItemUncheckedCreateInput) =>
 export const updateGuarded = async (
   where: Prisma.WorkItemWhereInput,
   data: Prisma.WorkItemUncheckedUpdateManyInput,
-) => (await prisma.workItem.updateMany({ where, data })).count;
+  db: Db = prisma,
+) => (await db.workItem.updateMany({ where, data })).count;
 
 /** Returns false when no item had this id. Comments and notifications cascade. */
 export const remove = async (id: string) =>
@@ -78,3 +107,24 @@ export const countByProject = (projectId: string) =>
 /** Items assigned to the user in the project that are not finished yet. */
 export const countActiveAssigned = (projectId: string, assigneeId: string) =>
   prisma.workItem.count({ where: { projectId, assigneeId, status: { notIn: FINAL_STATUSES } } });
+
+/**
+ * Atomically claims up to `batchSize` assigned, unfinished items that are due within the window
+ * and not yet reminded, by setting `remindedAt`. SKIP LOCKED lets parallel runs take different rows,
+ * so an item is never reminded twice.
+ */
+export const claimDueSoon = (tx: Db, windowHours: number, batchSize: number) =>
+  tx.$queryRaw<{ id: string; title: string; assigneeId: string; dueDate: Date }[]>`
+    UPDATE "WorkItem" SET "remindedAt" = NOW()
+    WHERE id IN (
+      SELECT id FROM "WorkItem"
+      WHERE "assigneeId" IS NOT NULL
+        AND "dueDate" IS NOT NULL
+        AND "remindedAt" IS NULL
+        AND "dueDate" <= NOW() + make_interval(hours => ${windowHours}::int)
+        AND status::text NOT IN (${Prisma.join(FINAL_STATUSES)})
+      ORDER BY "dueDate"
+      LIMIT ${batchSize}::int
+      FOR UPDATE SKIP LOCKED
+    )
+    RETURNING id, title, "assigneeId", "dueDate"`;

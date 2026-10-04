@@ -20,6 +20,9 @@ const TRANSITIONS: Record<WorkItemType, Partial<Record<Status, readonly Status[]
   },
 };
 
+/** The statuses a type can have, in workflow order (the board's columns). */
+export const statusesFor = (type: WorkItemType) => Object.keys(TRANSITIONS[type]) as Status[];
+
 export const INITIAL_STATUS: Record<WorkItemType, Status> = {
   [WorkItemType.TASK]: TODO,
   [WorkItemType.TICKET]: OPEN,

@@ -7,12 +7,12 @@
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "dev": "pnpm --filter server dev",
-    "dev:web": "pnpm --filter web dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "start": "pnpm --filter server start"
   },
   "license": "ISC",
   "packageManager": "pnpm@10.34.4",

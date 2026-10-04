@@ -4,6 +4,8 @@ import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { validate } from '../../middleware/validate.js';
 import { idParams } from '../../utils/schemas.js';
+import * as workItemsController from '../workItems/workItems.controller.js';
+import { boardQuery } from '../workItems/workItems.schema.js';
 import * as projectsController from './projects.controller.js';
 import {
   addMembersSchema,
@@ -54,4 +56,11 @@ projectsRouter.delete(
   canWrite,
   validate({ params: memberParams }),
   projectsController.removeMember,
+);
+
+// The board lists work items, so it is served by the work-items module.
+projectsRouter.get(
+  '/:id/board',
+  validate({ params: idParams, query: boardQuery }),
+  workItemsController.board,
 );
