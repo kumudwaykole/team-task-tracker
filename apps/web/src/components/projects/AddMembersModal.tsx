@@ -10,9 +10,9 @@ import { errorMessage } from '../../lib/errors';
 import { pluralize } from '../../lib/format';
 import { Avatar } from '../ui/badges';
 import { Button } from '../ui/Button';
-import { SkeletonRows } from '../ui/feedback';
 import { Modal } from '../ui/Modal';
 import { SearchInput } from '../ui/SearchInput';
+import { ListSkeleton } from '../ui/skeletons';
 
 interface AddMembersModalProps {
   open: boolean;
@@ -66,12 +66,7 @@ function AddMembersForm({ projectId, onClose }: { projectId: string; onClose: ()
 
   return (
     <div className="space-y-3">
-      <SearchInput
-        value=""
-        onSearch={setQ}
-        placeholder="Search members by name or email"
-        wide
-      />
+      <SearchInput value="" onSearch={setQ} placeholder="Search members by name or email" wide />
 
       {selected.length > 0 && (
         <ul className="flex flex-wrap gap-1.5" aria-label="Selected">
@@ -93,7 +88,7 @@ function AddMembersForm({ projectId, onClose }: { projectId: string; onClose: ()
 
       <div className="max-h-72 overflow-y-auto rounded-md border border-border">
         {candidates.isPending ? (
-          <SkeletonRows rows={4} className="p-2" />
+          <ListSkeleton rows={4} />
         ) : candidates.data?.data.length ? (
           candidates.data.data.map((user) => {
             const checked = selected.some((u) => u.id === user.id);

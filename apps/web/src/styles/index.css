@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Enter/exit animations used by the shadcn menus and the mobile sidebar sheet. */
+@import 'tw-animate-css';
 
 /*
  * Every colour in the app is defined here, once. Components use only these tokens
@@ -58,13 +60,50 @@
   --shadow-overlay: 0 8px 12px #0304044d, 0 0 1px #03040480;
 }
 
+/*
+ * The names the shadcn/ui components use (bg-sidebar, text-muted-foreground, ring-ring, ...),
+ * as aliases of the tokens above, so they share one palette. The app is dark only.
+ */
+@theme inline {
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-fg);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-fg);
+  --color-popover: var(--color-raised);
+  --color-popover-foreground: var(--color-fg-strong);
+  --color-primary-foreground: var(--color-on-primary);
+  --color-secondary-foreground: var(--color-fg-strong);
+  --color-muted: var(--color-secondary);
+  --color-muted-foreground: var(--color-fg-subtle);
+  --color-accent: var(--color-hover);
+  --color-accent-foreground: var(--color-fg-strong);
+  --color-destructive: var(--color-danger);
+  --color-input: var(--color-border-strong);
+  --color-ring: var(--color-primary);
+
+  --color-sidebar: var(--color-surface);
+  --color-sidebar-foreground: var(--color-fg);
+  --color-sidebar-primary: var(--color-primary);
+  --color-sidebar-primary-foreground: var(--color-on-primary);
+  --color-sidebar-accent: var(--color-hover);
+  --color-sidebar-accent-foreground: var(--color-fg-strong);
+  --color-sidebar-border: var(--color-border);
+  --color-sidebar-ring: var(--color-primary);
+}
+
 @layer base {
   html {
     color-scheme: dark;
-    font-size: 14px;
+    font-size: 15px;
   }
   body {
     @apply bg-canvas text-fg font-sans antialiased;
+  }
+  /* A bare `border` class gets the token colour, not currentColor. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
   }
   :focus-visible {
     outline: 2px solid var(--color-primary);

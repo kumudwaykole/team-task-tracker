@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowRight, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { AuthLayout } from '../components/layout/AuthLayout';
 import { Button } from '../components/ui/Button';
-import { Field, Input } from '../components/ui/form';
+import { Field, IconInput, PasswordInput } from '../components/ui/form';
 import { useAuth } from '../context/AuthContext';
 import { errorMessage } from '../lib/errors';
 
@@ -37,7 +38,8 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Log in to your account"
+      title="Welcome back"
+      subtitle="Log in to see your work, projects and notifications."
       footer={
         <>
           No account?{' '}
@@ -47,15 +49,20 @@ export function LoginPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-5">
         {errors.root?.message && (
-          <p role="alert" className="rounded-md bg-danger/15 px-3 py-2 text-danger">
+          <p
+            role="alert"
+            className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2.5 text-danger"
+          >
             {errors.root.message}
           </p>
         )}
         <Field label="Email" htmlFor="login-email" error={errors.email?.message}>
-          <Input
+          <IconInput
+            icon={Mail}
             id="login-email"
+            placeholder="you@company.com"
             type="email"
             autoComplete="email"
             autoFocus
@@ -64,16 +71,16 @@ export function LoginPage() {
           />
         </Field>
         <Field label="Password" htmlFor="login-password" error={errors.password?.message}>
-          <Input
+          <PasswordInput
             id="login-password"
-            type="password"
             autoComplete="current-password"
             aria-invalid={!!errors.password}
             {...register('password')}
           />
         </Field>
-        <Button type="submit" variant="primary" loading={isSubmitting} className="w-full">
+        <Button type="submit" variant="primary" size="lg" loading={isSubmitting} className="w-full">
           Log in
+          {!isSubmitting && <ArrowRight className="size-4" aria-hidden />}
         </Button>
       </form>
     </AuthLayout>

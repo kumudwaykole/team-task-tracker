@@ -180,7 +180,7 @@ function Column({ column, active, listParams }: ColumnProps) {
       ref={setNodeRef}
       aria-label={`${STATUS_LABELS[column.status]}: ${column.total} items`}
       className={cx(
-        'flex w-72 shrink-0 flex-col rounded-lg bg-sunken p-2 transition-[opacity,background-color]',
+        'flex max-w-80 min-w-56 flex-1 flex-col rounded-lg bg-sunken p-2 transition-[opacity,background-color]',
         canDrop && 'bg-selected',
         canDrop && isOver && 'ring-2 ring-primary',
         dimmed && 'opacity-40',

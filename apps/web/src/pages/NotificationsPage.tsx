@@ -2,11 +2,12 @@ import { Inbox } from 'lucide-react';
 import { NotificationItem } from '../components/notifications/NotificationItem';
 import { Button } from '../components/ui/Button';
 import { QueryError } from '../components/ui/ErrorState';
-import { EmptyState, PageHeader, Pagination, SkeletonRows, Tabs } from '../components/ui/feedback';
+import { EmptyState, PageHeader, Pagination, Tabs } from '../components/ui/feedback';
 import { useCurrentUser } from '../context/AuthContext';
 import { useListParams } from '../hooks/useListParams';
 import { useMarkAllRead, useNotificationList } from '../hooks/useNotifications';
 import { cx } from '../lib/cx';
+import { ListSkeleton } from '../components/ui/skeletons';
 
 type Tab = 'all' | 'unread' | 'everyone';
 
@@ -50,7 +51,7 @@ export function NotificationsPage() {
 
       <div className="mt-3">
         {list.isPending ? (
-          <SkeletonRows />
+          <ListSkeleton rows={8} />
         ) : list.isError ? (
           <QueryError error={list.error} onRetry={() => void list.refetch()} />
         ) : list.data.data.length === 0 ? (

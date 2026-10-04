@@ -9,13 +9,14 @@ import { UserLabel } from '../components/ui/badges';
 import { Button, IconButton } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { QueryError } from '../components/ui/ErrorState';
-import { EmptyState, PageHeader, Pagination, SkeletonRows } from '../components/ui/feedback';
+import { EmptyState, PageHeader, Pagination } from '../components/ui/feedback';
 import { SearchInput } from '../components/ui/SearchInput';
 import { useListParams } from '../hooks/useListParams';
 import { useProject } from '../hooks/useProject';
 import { cx } from '../lib/cx';
 import { errorMessage, hasCode } from '../lib/errors';
 import { formatDate } from '../lib/format';
+import { TableSkeleton } from '../components/ui/skeletons';
 
 export function ProjectMembersPage() {
   const { project, canManage } = useProject();
@@ -68,7 +69,7 @@ export function ProjectMembersPage() {
       />
 
       {members.isPending ? (
-        <SkeletonRows />
+        <TableSkeleton columns={4} />
       ) : members.isError ? (
         <QueryError error={members.error} onRetry={() => void members.refetch()} />
       ) : members.data.data.length === 0 ? (

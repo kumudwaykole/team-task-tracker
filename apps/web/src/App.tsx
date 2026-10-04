@@ -7,7 +7,7 @@ import { AppShell } from './components/layout/AppShell';
 import { ProjectLayout } from './components/layout/ProjectLayout';
 import { ProtectedRoute, PublicOnlyRoute } from './components/layout/routeGuards';
 import { ErrorState } from './components/ui/ErrorState';
-import { FullPageSpinner } from './components/ui/feedback';
+import { AuthSkeleton } from './components/ui/skeletons';
 import { AuthProvider } from './context/AuthProvider';
 import { SocketProvider } from './context/SocketProvider';
 
@@ -69,7 +69,8 @@ export function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SocketProvider>
-            <Suspense fallback={<FullPageSpinner />}>
+            {/* Only the login and register pages load here; the app shell has its own fallback. */}
+            <Suspense fallback={<AuthSkeleton />}>
               <Routes>
                 <Route element={<PublicOnlyRoute />}>
                   <Route path="/login" element={<LoginPage />} />

@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMarkAllRead, useNotificationList, useUnreadCount } from '../../hooks/useNotifications';
 import { Button } from '../ui/Button';
-import { SkeletonRows } from '../ui/feedback';
 import { Checkbox } from '../ui/form';
 import { Menu } from '../ui/Menu';
 import { NotificationItem } from './NotificationItem';
+import { ListSkeleton } from '../ui/skeletons';
 
 export function NotificationBell() {
   const { data } = useUnreadCount();
@@ -70,7 +70,7 @@ function BellPanel({ onClose }: { onClose: () => void }) {
 
       <div className="max-h-96 overflow-y-auto">
         {list.isPending ? (
-          <SkeletonRows rows={4} className="p-3" />
+          <ListSkeleton rows={4} className="p-1" />
         ) : list.data?.data.length ? (
           list.data.data.map((notification) => (
             <NotificationItem

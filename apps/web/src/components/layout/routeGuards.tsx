@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation, type Location } from 'react-router-dom';
 import type { Role } from '../../api/types';
 import { useAuth } from '../../context/AuthContext';
 import { ErrorState } from '../ui/ErrorState';
-import { FullPageSpinner } from '../ui/feedback';
+import { AppShellSkeleton, AuthSkeleton } from '../ui/skeletons';
 
 /**
  * Requires a logged-in user, and optionally one of `roles`. This is for usability only:
@@ -13,7 +13,7 @@ export function ProtectedRoute({ roles, children }: { roles?: Role[]; children?:
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <AppShellSkeleton />;
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
   if (roles && !roles.includes(user.role)) return <ErrorState kind="forbidden" />;
   return children ?? <Outlet />;
@@ -24,7 +24,7 @@ export function PublicOnlyRoute() {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) return <FullPageSpinner />;
+  if (isLoading) return <AuthSkeleton />;
   if (user) {
     const from = (location.state as { from?: Location } | null)?.from;
     return <Navigate to={from ? `${from.pathname}${from.search}` : '/'} replace />;

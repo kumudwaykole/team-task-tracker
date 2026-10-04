@@ -1,5 +1,5 @@
 # 🎫 Unified Team Task & Support Ticket Tracker
-
+![alt text](image.png)
 [![CI](https://github.com/kumudwaykole/team-task-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/kumudwaykole/team-task-tracker/actions/workflows/ci.yml)
 
 One system for project tasks and support tickets, with role-based access control and real-time

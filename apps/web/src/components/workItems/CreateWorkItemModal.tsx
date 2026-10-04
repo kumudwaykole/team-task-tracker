@@ -12,9 +12,10 @@ import { errorMessage, fieldErrors, hasCode } from '../../lib/errors';
 import { fromLocalInput } from '../../lib/format';
 import { itemKey, PRIORITIES, PRIORITY_LABELS } from '../../lib/labels';
 import { Button } from '../ui/Button';
-import { SkeletonRows, Tabs } from '../ui/feedback';
+import { Tabs } from '../ui/feedback';
 import { Field, Input, Select, Textarea } from '../ui/form';
 import { Modal } from '../ui/Modal';
+import { FormSkeleton } from '../ui/skeletons';
 
 // Mirrors the API's rules; the server validates again.
 const schema = z
@@ -138,7 +139,7 @@ function CreateForm({
   });
 
   // Mount the fields once the projects exist, so a pre-selected project is shown in the select.
-  if (projects.isPending) return <SkeletonRows rows={5} />;
+  if (projects.isPending) return <FormSkeleton />;
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">

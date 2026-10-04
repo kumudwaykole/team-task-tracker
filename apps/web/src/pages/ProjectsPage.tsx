@@ -7,12 +7,13 @@ import { CreateProjectModal } from '../components/projects/CreateProjectModal';
 import { UserLabel } from '../components/ui/badges';
 import { Button } from '../components/ui/Button';
 import { QueryError } from '../components/ui/ErrorState';
-import { EmptyState, PageHeader, Pagination, SkeletonRows } from '../components/ui/feedback';
+import { EmptyState, PageHeader, Pagination } from '../components/ui/feedback';
 import { SearchInput } from '../components/ui/SearchInput';
 import { useCurrentUser } from '../context/AuthContext';
 import { useListParams } from '../hooks/useListParams';
 import { cx } from '../lib/cx';
 import { formatDate } from '../lib/format';
+import { TableSkeleton } from '../components/ui/skeletons';
 
 export function ProjectsPage() {
   const user = useCurrentUser();
@@ -67,7 +68,7 @@ export function ProjectsPage() {
       />
 
       {projects.isPending ? (
-        <SkeletonRows />
+        <TableSkeleton columns={5} />
       ) : projects.isError ? (
         <QueryError error={projects.error} onRetry={() => void projects.refetch()} />
       ) : projects.data.data.length === 0 ? (

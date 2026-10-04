@@ -9,7 +9,6 @@ import { PriorityIcon, TypeIcon, UserLabel } from '../components/ui/badges';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { QueryError } from '../components/ui/ErrorState';
-import { SkeletonRows } from '../components/ui/feedback';
 import { Input, Select, Textarea } from '../components/ui/form';
 import { Comments } from '../components/workItems/Comments';
 import { StatusMenu } from '../components/workItems/StatusMenu';
@@ -18,6 +17,7 @@ import { cx } from '../lib/cx';
 import { errorMessage, hasCode } from '../lib/errors';
 import { formatDateTime, fromLocalInput, isOverdue, timeAgo, toLocalInput } from '../lib/format';
 import { itemKey, PRIORITIES, PRIORITY_LABELS } from '../lib/labels';
+import { WorkItemDetailSkeleton } from '../components/ui/skeletons';
 
 export function WorkItemDetailPage() {
   const { id = '' } = useParams();
@@ -26,7 +26,7 @@ export function WorkItemDetailPage() {
     queryFn: ({ signal }) => workItemsApi.get(id, signal),
   });
 
-  if (item.isPending) return <SkeletonRows rows={8} className="mx-auto max-w-6xl p-6" />;
+  if (item.isPending) return <WorkItemDetailSkeleton />;
   // Someone else's item (outside the user's scope) is a 404 from the API: show "not found".
   if (item.isError) return <QueryError error={item.error} onRetry={() => void item.refetch()} />;
   return <IssueView item={item.data} />;

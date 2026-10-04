@@ -7,7 +7,7 @@ import { usersApi } from '../api/users';
 import { UserLabel } from '../components/ui/badges';
 import { Button } from '../components/ui/Button';
 import { QueryError } from '../components/ui/ErrorState';
-import { EmptyState, PageHeader, Pagination, SkeletonRows } from '../components/ui/feedback';
+import { EmptyState, PageHeader, Pagination } from '../components/ui/feedback';
 import { Select } from '../components/ui/form';
 import { SearchInput } from '../components/ui/SearchInput';
 import { CreateUserModal } from '../components/users/CreateUserModal';
@@ -17,6 +17,7 @@ import { cx } from '../lib/cx';
 import { errorMessage } from '../lib/errors';
 import { formatDate } from '../lib/format';
 import { ROLE_LABELS, ROLES } from '../lib/labels';
+import { TableSkeleton } from '../components/ui/skeletons';
 
 /** Admin only: users, their roles, and new accounts. */
 export function AdminUsersPage() {
@@ -79,7 +80,7 @@ export function AdminUsersPage() {
       </div>
 
       {users.isPending ? (
-        <SkeletonRows />
+        <TableSkeleton columns={5} />
       ) : users.isError ? (
         <QueryError error={users.error} onRetry={() => void users.refetch()} />
       ) : users.data.data.length === 0 ? (

@@ -7,11 +7,12 @@ import type { Status } from '../api/types';
 import { workItemsApi } from '../api/workItems';
 import { StatusLozenge } from '../components/ui/badges';
 import { QueryError } from '../components/ui/ErrorState';
-import { EmptyState, SkeletonRows } from '../components/ui/feedback';
+import { EmptyState } from '../components/ui/feedback';
 import { WorkItemTable } from '../components/workItems/WorkItemTable';
 import { useCurrentUser } from '../context/AuthContext';
 import { cx } from '../lib/cx';
 import { ALL_STATUSES, FINAL_STATUSES } from '../lib/labels';
+import { DashboardSkeleton, TableSkeleton } from '../components/ui/skeletons';
 
 const ACTIVE_STATUSES = ALL_STATUSES.filter((status) => !FINAL_STATUSES.includes(status));
 const MY_WORK = {
@@ -46,7 +47,7 @@ export function DashboardPage() {
       <h1 className="text-xl font-semibold text-fg-strong">Hi, {user.name.split(' ')[0]}</h1>
 
       {summary.isPending ? (
-        <SkeletonRows rows={2} />
+        <DashboardSkeleton />
       ) : summary.isError ? (
         <QueryError error={summary.error} onRetry={() => void summary.refetch()} />
       ) : (
@@ -116,7 +117,7 @@ export function DashboardPage() {
           </Link>
         </div>
         {myWork.isPending ? (
-          <SkeletonRows rows={5} />
+          <TableSkeleton rows={5} columns={8} />
         ) : myWork.isError ? (
           <QueryError error={myWork.error} onRetry={() => void myWork.refetch()} />
         ) : myWork.data.data.length === 0 ? (

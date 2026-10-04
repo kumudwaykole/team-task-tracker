@@ -15,11 +15,12 @@ import {
 } from '../../lib/labels';
 import { Button } from '../ui/Button';
 import { QueryError } from '../ui/ErrorState';
-import { EmptyState, Pagination, SkeletonRows } from '../ui/feedback';
+import { EmptyState, Pagination } from '../ui/feedback';
 import { Checkbox, Select } from '../ui/form';
 import { MultiSelect } from '../ui/MultiSelect';
 import { SearchInput } from '../ui/SearchInput';
 import { WorkItemTable, type SortField } from './WorkItemTable';
+import { TableSkeleton } from '../ui/skeletons';
 
 const PAGE_SIZE = 20;
 const SORT_FIELDS: SortField[] = ['createdAt', 'updatedAt', 'dueDate', 'priority', 'title'];
@@ -112,7 +113,7 @@ export function WorkItemsView({ projectId }: { projectId?: string }) {
       </div>
 
       {list.isPending ? (
-        <SkeletonRows rows={8} />
+        <TableSkeleton rows={8} columns={8} />
       ) : list.isError ? (
         <QueryError error={list.error} onRetry={() => void list.refetch()} />
       ) : list.data.data.length === 0 ? (

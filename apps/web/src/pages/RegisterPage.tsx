@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowRight, Mail, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { AuthLayout } from '../components/layout/AuthLayout';
 import { Button } from '../components/ui/Button';
-import { Field, Input } from '../components/ui/form';
+import { Field, IconInput, PasswordInput } from '../components/ui/form';
 import { useAuth } from '../context/AuthContext';
 import { errorMessage, fieldErrors, hasCode } from '../lib/errors';
 import { newPassword } from '../lib/validation';
@@ -45,6 +46,7 @@ export function RegisterPage() {
   return (
     <AuthLayout
       title="Create your account"
+      subtitle="Join your team's workspace. It takes less than a minute."
       footer={
         <>
           Already have an account?{' '}
@@ -54,15 +56,20 @@ export function RegisterPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-5">
         {errors.root?.message && (
-          <p role="alert" className="rounded-md bg-danger/15 px-3 py-2 text-danger">
+          <p
+            role="alert"
+            className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2.5 text-danger"
+          >
             {errors.root.message}
           </p>
         )}
         <Field label="Full name" htmlFor="register-name" error={errors.name?.message}>
-          <Input
+          <IconInput
+            icon={User}
             id="register-name"
+            placeholder="Your full name"
             autoComplete="name"
             autoFocus
             aria-invalid={!!errors.name}
@@ -70,8 +77,10 @@ export function RegisterPage() {
           />
         </Field>
         <Field label="Email" htmlFor="register-email" error={errors.email?.message}>
-          <Input
+          <IconInput
+            icon={Mail}
             id="register-email"
+            placeholder="you@company.com"
             type="email"
             autoComplete="email"
             aria-invalid={!!errors.email}
@@ -84,9 +93,8 @@ export function RegisterPage() {
           error={errors.password?.message}
           hint="8 to 72 characters, with a lowercase letter, an uppercase letter and a digit."
         >
-          <Input
+          <PasswordInput
             id="register-password"
-            type="password"
             autoComplete="new-password"
             aria-invalid={!!errors.password}
             {...register('password')}
@@ -95,8 +103,9 @@ export function RegisterPage() {
         <p className="text-xs text-fg-subtle">
           New accounts join as Members. An Admin can change your role later.
         </p>
-        <Button type="submit" variant="primary" loading={isSubmitting} className="w-full">
-          Sign up
+        <Button type="submit" variant="primary" size="lg" loading={isSubmitting} className="w-full">
+          Create account
+          {!isSubmitting && <ArrowRight className="size-4" aria-hidden />}
         </Button>
       </form>
     </AuthLayout>

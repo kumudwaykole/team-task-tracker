@@ -14,8 +14,8 @@ import { errorMessage } from '../../lib/errors';
 import { formatDateTime, timeAgo } from '../../lib/format';
 import { Avatar } from '../ui/badges';
 import { Button } from '../ui/Button';
-import { SkeletonRows } from '../ui/feedback';
 import { Textarea } from '../ui/form';
+import { ListSkeleton } from '../ui/skeletons';
 
 const PAGE_SIZE = 20;
 
@@ -55,7 +55,7 @@ export function Comments({ item }: { item: WorkItemDetail }) {
       )}
 
       {comments.isPending ? (
-        <SkeletonRows rows={3} />
+        <ListSkeleton rows={3} />
       ) : ordered.length === 0 ? (
         <p className="flex items-center gap-2 text-fg-subtle">
           <MessageSquare className="size-4" aria-hidden /> No comments yet.

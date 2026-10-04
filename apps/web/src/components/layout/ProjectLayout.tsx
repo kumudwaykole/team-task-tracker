@@ -5,7 +5,7 @@ import { Link, NavLink, Outlet, useParams } from 'react-router-dom';
 import { projectsApi } from '../../api/projects';
 import { cx } from '../../lib/cx';
 import { QueryError } from '../ui/ErrorState';
-import { SkeletonRows } from '../ui/feedback';
+import { ProjectSkeleton, TableSkeleton } from '../ui/skeletons';
 
 const SECTIONS = [
   { to: 'board', label: 'Board', icon: Kanban },
@@ -21,7 +21,7 @@ export function ProjectLayout() {
     queryFn: ({ signal }) => projectsApi.get(projectId, signal),
   });
 
-  if (query.isPending) return <SkeletonRows className="p-6" />;
+  if (query.isPending) return <ProjectSkeleton />;
   if (query.isError) return <QueryError error={query.error} onRetry={() => void query.refetch()} />;
 
   const project = query.data;
@@ -56,7 +56,7 @@ export function ProjectLayout() {
         </nav>
       </aside>
       <section className="min-w-0 flex-1 p-6">
-        <Suspense fallback={<SkeletonRows />}>
+        <Suspense fallback={<TableSkeleton rows={6} />}>
           <Outlet context={project} />
         </Suspense>
       </section>

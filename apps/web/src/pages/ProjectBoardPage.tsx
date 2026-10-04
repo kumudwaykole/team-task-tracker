@@ -4,11 +4,12 @@ import type { WorkItemType } from '../api/types';
 import { Board, PER_COLUMN } from '../components/board/Board';
 import { CreateInProjectButton } from '../components/workItems/CreateInProjectButton';
 import { QueryError } from '../components/ui/ErrorState';
-import { PageHeader, SkeletonRows, Tabs } from '../components/ui/feedback';
+import { PageHeader, Tabs } from '../components/ui/feedback';
 import { Select } from '../components/ui/form';
 import { SearchInput } from '../components/ui/SearchInput';
 import { useListParams } from '../hooks/useListParams';
 import { useProject } from '../hooks/useProject';
+import { BoardSkeleton } from '../components/ui/skeletons';
 
 export function ProjectBoardPage() {
   const { project } = useProject();
@@ -72,7 +73,7 @@ export function ProjectBoardPage() {
       </div>
 
       {board.isPending ? (
-        <SkeletonRows rows={4} />
+        <BoardSkeleton columns={type === 'TASK' ? 4 : 5} />
       ) : board.isError ? (
         <QueryError error={board.error} onRetry={() => void board.refetch()} />
       ) : (

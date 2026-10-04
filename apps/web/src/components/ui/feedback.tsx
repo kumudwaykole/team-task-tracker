@@ -1,36 +1,8 @@
-import { ChevronLeft, ChevronRight, LoaderCircle, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { PageMeta } from '../../api/types';
 import { cx } from '../../lib/cx';
 import { IconButton } from './Button';
-
-export function Spinner({ className }: { className?: string }) {
-  return (
-    <LoaderCircle
-      className={cx('size-5 animate-spin text-fg-subtle', className)}
-      aria-label="Loading"
-    />
-  );
-}
-
-export function FullPageSpinner() {
-  return (
-    <div className="grid min-h-screen place-items-center">
-      <Spinner className="size-7" />
-    </div>
-  );
-}
-
-/** Pulsing placeholder rows, used instead of spinners for lists and pages. */
-export function SkeletonRows({ rows = 6, className }: { rows?: number; className?: string }) {
-  return (
-    <div className={cx('space-y-2', className)} aria-busy="true" aria-label="Loading">
-      {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="h-9 animate-pulse rounded-md bg-secondary" />
-      ))}
-    </div>
-  );
-}
 
 interface EmptyStateProps {
   icon: LucideIcon;

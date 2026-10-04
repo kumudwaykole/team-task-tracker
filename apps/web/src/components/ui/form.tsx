@@ -1,4 +1,5 @@
-import type { ComponentProps, ReactNode } from 'react';
+import { Eye, EyeOff, Lock, type LucideIcon } from 'lucide-react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { cx } from '../../lib/cx';
 
 const control =
@@ -10,7 +11,10 @@ export function Input({ className, ...props }: ComponentProps<'input'>) {
 
 export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
   return (
-    <textarea className={cx(control, 'min-h-24 w-full py-2 leading-relaxed', className)} {...props} />
+    <textarea
+      className={cx(control, 'min-h-24 w-full py-2 leading-relaxed', className)}
+      {...props}
+    />
   );
 }
 
@@ -58,5 +62,52 @@ export function Field({ label, htmlFor, error, hint, required, children }: Field
         hint && <p className="text-xs text-fg-subtle">{hint}</p>
       )}
     </div>
+  );
+}
+
+interface IconInputProps extends ComponentProps<'input'> {
+  icon: LucideIcon;
+  /** A control inside the right edge, e.g. a show-password button. */
+  trailing?: ReactNode;
+}
+
+/** A tall input with an icon inside its left edge (login and register forms). */
+export function IconInput({ icon: Icon, trailing, className, ...props }: IconInputProps) {
+  return (
+    <div className="relative">
+      <Icon
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle"
+        aria-hidden
+      />
+      <input
+        className={cx(control, 'h-10 w-full pl-9', trailing ? 'pr-10' : 'pr-3', className)}
+        {...props}
+      />
+      {trailing && <div className="absolute inset-y-0 right-1 flex items-center">{trailing}</div>}
+    </div>
+  );
+}
+
+/** A password input with a button to show or hide what was typed. */
+export function PasswordInput(props: Omit<IconInputProps, 'icon' | 'trailing' | 'type'>) {
+  const [visible, setVisible] = useState(false);
+  const Toggle = visible ? EyeOff : Eye;
+  return (
+    <IconInput
+      icon={Lock}
+      type={visible ? 'text' : 'password'}
+      trailing={
+        <button
+          type="button"
+          onClick={() => setVisible((value) => !value)}
+          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-pressed={visible}
+          className="grid size-8 place-items-center rounded-md text-fg-subtle hover:bg-secondary hover:text-fg-strong"
+        >
+          <Toggle className="size-4" aria-hidden />
+        </button>
+      }
+      {...props}
+    />
   );
 }

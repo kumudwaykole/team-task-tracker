@@ -11,9 +11,15 @@ const VARIANTS: Record<Variant, string> = {
   danger: 'bg-danger text-on-primary hover:bg-danger/85',
 };
 
+const SIZES = {
+  sm: 'h-7 px-2 text-xs',
+  md: 'h-8 px-3',
+  lg: 'h-10 px-4',
+};
+
 interface ButtonProps extends ComponentProps<'button'> {
   variant?: Variant;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   /** Shows a spinner and disables the button (prevents double submits). */
   loading?: boolean;
   icon?: LucideIcon;
@@ -36,7 +42,7 @@ export function Button({
       disabled={disabled || loading}
       className={cx(
         'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-        size === 'sm' ? 'h-7 px-2 text-xs' : 'h-8 px-3',
+        SIZES[size],
         VARIANTS[variant],
         className,
       )}
