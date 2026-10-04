@@ -20,7 +20,13 @@ export const unauthorized = (message = 'Authentication required', code = 'UNAUTH
 export const forbidden = (message = 'You do not have permission to perform this action') =>
   new AppError(403, 'FORBIDDEN', message);
 
+/** The user may act on the record, but not on these fields. */
+export const forbiddenFields = (fields: string[]) =>
+  new AppError(403, 'FORBIDDEN_FIELD', `You are not allowed to change: ${fields.join(', ')}`, {
+    fields,
+  });
+
 export const notFound = (message = 'Resource not found') => new AppError(404, 'NOT_FOUND', message);
 
-export const conflict = (message = 'Conflict', code = 'CONFLICT') =>
-  new AppError(409, code, message);
+export const conflict = (message = 'Conflict', code = 'CONFLICT', details?: unknown) =>
+  new AppError(409, code, message, details);

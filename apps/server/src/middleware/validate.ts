@@ -5,7 +5,7 @@ import { badRequest } from '../utils/AppError.js';
 type Location = 'body' | 'query' | 'params';
 type Schemas = Partial<Record<Location, ZodType>>;
 
-export interface ValidationIssue {
+interface ValidationIssue {
   location?: Location;
   path: string;
   message: string;

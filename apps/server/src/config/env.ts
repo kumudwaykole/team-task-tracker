@@ -42,5 +42,4 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
-export const isProduction = env.NODE_ENV === 'production';
 export const isTest = env.NODE_ENV === 'test';

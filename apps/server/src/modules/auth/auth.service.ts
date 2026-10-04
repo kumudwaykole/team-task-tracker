@@ -1,36 +1,21 @@
 import { Role } from '../../generated/prisma/enums.js';
 import type { AuthUser } from '../../types/auth.js';
-import { conflict, unauthorized } from '../../utils/AppError.js';
+import { unauthorized } from '../../utils/AppError.js';
 import { signToken } from '../../utils/jwt.js';
-import { getDummyHash, hashPassword, verifyPassword } from '../../utils/password.js';
-import { isUniqueViolation } from '../../utils/prismaErrors.js';
+import { getDummyHash, verifyPassword } from '../../utils/password.js';
 import * as usersRepository from '../users/users.repository.js';
+import { createUser } from '../users/users.service.js';
 import type { LoginInput, RegisterInput } from './auth.schema.js';
 
-export interface AuthResult {
+interface AuthResult {
   token: string;
   user: AuthUser;
 }
 
 export async function register(input: RegisterInput): Promise<AuthResult> {
-  const passwordHash = await hashPassword(input.password);
-
-  try {
-    // Public sign-up always creates a MEMBER. The role is never read from the request.
-    const user = await usersRepository.create({
-      name: input.name,
-      email: input.email,
-      passwordHash,
-      role: Role.MEMBER,
-    });
-    return { token: signToken(user), user };
-  } catch (err) {
-    // Rely on the unique index instead of "find then insert", which has a race condition.
-    if (isUniqueViolation(err)) {
-      throw conflict('An account with this email already exists', 'EMAIL_TAKEN');
-    }
-    throw err;
-  }
+  // Public sign-up always creates a MEMBER. The role is never read from the request.
+  const user = await createUser({ ...input, role: Role.MEMBER });
+  return { token: signToken(user), user };
 }
 
 export async function login({ email, password }: LoginInput): Promise<AuthResult> {

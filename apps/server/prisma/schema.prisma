@@ -116,7 +116,7 @@ model WorkItem {
   notifications Notification[]
 
   @@index([projectId, status])
-  @@index([assigneeId])
+  @@index([assigneeId, status]) // "my work" filtered by status
   @@index([requesterId])
   @@index([type, priority])
   @@index([dueDate])

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const DEFAULT_PAGE_SIZE = 10;
-export const MAX_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 100;
 
 /**
  * Shared list query params. Modules extend it with their own whitelisted
@@ -20,14 +20,24 @@ export const paginationSchema = z.object({
     .transform((value) => value || undefined),
 });
 
-export type PaginationQuery = z.infer<typeof paginationSchema>;
+type PageQuery = Pick<z.infer<typeof paginationSchema>, 'page' | 'limit'>;
+type SortOrder = z.infer<typeof paginationSchema>['order'];
 
-export const toSkipTake = ({ page, limit }: { page: number; limit: number }) => ({
+export const toSkipTake = ({ page, limit }: PageQuery) => ({
   skip: (page - 1) * limit,
   take: limit,
 });
 
-export const buildMeta = (page: number, limit: number, total: number) => ({
+/**
+ * `[{ [sortBy]: order }, { id: order }]`. The id tie-breaker keeps pages stable
+ * when several rows share the same sort value. `sortBy` must come from a Zod enum.
+ */
+export const sortWithTieBreaker = <F extends string>(sortBy: F, order: SortOrder) => [
+  { [sortBy]: order } as Partial<Record<F, SortOrder>>,
+  { id: order },
+];
+
+export const buildMeta = ({ page, limit }: PageQuery, total: number) => ({
   page,
   limit,
   total,
@@ -36,4 +46,7 @@ export const buildMeta = (page: number, limit: number, total: number) => ({
   hasPrev: page > 1,
 });
 
-export type PaginationMeta = ReturnType<typeof buildMeta>;
+export interface Paginated<T> {
+  data: T[];
+  meta: ReturnType<typeof buildMeta>;
+}
