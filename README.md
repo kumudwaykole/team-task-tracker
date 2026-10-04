@@ -34,9 +34,8 @@ instead:
 ```sh
 cp apps/server/.env.example apps/server/.env
 cp .env.example .env
-# then set JWT_SECRET in both files to 32+ random characters, e.g. the output of:
-openssl rand -hex 32
-# PowerShell instead: -join ((1..32) | % { '{0:x2}' -f (Get-Random -Max 256) })
+# then set JWT_SECRET in both files to 32+ random characters
+
 ```
 
 **4. Run the application**
@@ -104,8 +103,6 @@ Run them from the repository root.
 The app uses port **3000** (API, Socket.IO and UI on one port) and PostgreSQL uses port **5434**
 on this machine only.
 
-![Project board](docs/screenshots/board.png)
-
 ## ✨ Features
 
 - JWT authentication, bcrypt password hashing, three roles: Admin, Manager, Member
@@ -115,7 +112,7 @@ on this machine only.
   workflows, comments
 - Notifications that are stored and pushed live (Socket.IO, one private room per user),
   including due-date reminders from a scheduled job
-- Jira-style dark UI: drag-and-drop board, server-side pagination, debounced search
+- Best UI: drag-and-drop board, server-side pagination, debounced search
 
 <p>
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="36" height="36" alt="React" />
